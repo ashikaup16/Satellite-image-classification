@@ -94,6 +94,39 @@ Open the local URL printed by Streamlit, usually <http://localhost:8501>. In VS 
 
 The clipboard component accepts common raster formats: JPEG, PNG, WebP, BMP, TIFF, and GIF (first frame). PDF and SVG are vector formats and must be copied/rendered as an image first. Each pasted image is limited to **50 MB** and **50 million pixels**; literally unlimited image sizes are not practical for a browser application.
 
+## ☁️ Deploy on Streamlit Community Cloud
+
+This project is a **Streamlit server application**. Deploy it on
+[Streamlit Community Cloud](https://share.streamlit.io/), which runs Streamlit
+apps directly from GitHub. Do not select Vercel for this repository: Vercel's
+serverless deployment model does not host this Streamlit server and its
+interactive browser connection as-is. Adding a Vercel configuration file alone
+will not make the app work.
+
+1. Push the project to a GitHub repository that your Streamlit account can
+   access. The current repository is
+   [`ashikaup16/Satellite-image-classification`](https://github.com/ashikaup16/Satellite-image-classification),
+   on the `main` branch.
+2. Sign in at [share.streamlit.io](https://share.streamlit.io/) with GitHub and
+   choose **Create app**.
+3. Select the repository `ashikaup16/Satellite-image-classification`, branch
+   `main`, and main file path `app.py`.
+4. Choose **Deploy** and wait for the dependency installation and first app
+   startup to finish. Check the app's build logs in Streamlit Community Cloud if
+   startup fails.
+
+The root `requirements.txt` contains the Python dependencies and
+`.streamlit/config.toml` contains Streamlit server settings; no Vercel
+configuration or secrets are required. The deployed app runs on CPU, so the
+batched inference metric will be labeled as a CPU fallback and will **not**
+represent GPU acceleration. Streamlit Community Cloud resource limits apply;
+very large pasted images may exceed available memory or processing time.
+
+The Vercel screenshot's “project already exists” message means a project with
+that name is already in your Vercel account; creating it again is unnecessary.
+That project will still not serve this Streamlit app. You can leave the Vercel
+project unused and deploy this repository using the steps above.
+
 ## 📊 How to interpret the metrics
 
 ### Class percentage
