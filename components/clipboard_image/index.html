@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #17364b;
+      font: 14px/1.5 "Segoe UI", Arial, sans-serif;
+      background: transparent;
+    }
+    .paste-target {
+      display: grid;
+      min-height: 132px;
+      place-items: center;
+      padding: 18px;
+      text-align: center;
+      border: 2px dashed #7ca6b7;
+      border-radius: 16px;
+      outline: none;
+      background: linear-gradient(145deg, #f8fcff, #edf5f8);
+      transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+    }
+    .paste-target:focus, .paste-target:hover {
+      border-color: #16808a;
+      box-shadow: 0 0 0 3px rgba(22, 128, 138, .12);
+    }
+    .paste-target.has-image {
+      border-style: solid;
+      border-color: #16808a;
+      background: #f0faf7;
+    }
+    .icon {
+      margin-bottom: 5px;
+      color: #16808a;
+      font-size: 24px;
+    }
+    .title { font-weight: 700; font-size: 15px; }
+    .hint { margin-top: 3px; color: #526878; }
+    .status { margin-top: 5px; color: #116c54; font-weight: 600; }
+    .error { color: #a53131; }
+    .clear {
+      margin-top: 8px;
+      padding: 5px 12px;
+      border: 1px solid #9db5c0;
+      border-radius: 8px;
+      color: #234558;
+      background: white;
+      font: inherit;
+      cursor: pointer;
+    }
+    .clear:hover { background: #edf5f8; }
+  </style>
+</head>
+<body>
+  <div id="target" class="paste-target" tabindex="0" role="button"
+       aria-label="Paste an image from the clipboard">
+    <div>
+      <div class="icon">▧</div>
+      <div id="label" class="title">Paste image</div>
+      <div class="hint">Click here, then press Ctrl+V (⌘+V on Mac)</div>
+      <div class="hint">Copy an image first from any image app or webpage</div>
+      <div id="status" class="status" aria-live="polite"></div>
+      <button id="clear" class="clear" type="button" hidden>Clear image</button>
+    </div>
+  </div>
+  <script>
+    const target = document.getElementById("target");
+    const label = document.getElementById("label");
+    const status = document.getElementById("status");
+    const clearButton = document.getElementById("clear");
+    let currentLabel = "Paste image";
+    let maxBytes = 52428800;
+
+    function send(type, fields = {}) {
+      window.parent.postMessage(
+        { isStreamlitMessage: true, type, ...fields },
+        "*"
+      );
+    }
+
+    function setHeight() {
+      send("streamlit:setFrameHeight", { height: document.body.scrollHeight });
+    }
+
+    function setStatus(message, isError = false, hasImage = false) {
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+      target.classList.toggle("has-image", hasImage);
+      clearButton.hidden = !hasImage;
+      setHeight();
+    }
+
+    window.addEventListener("message", (event) => {
+      const message = event.data;
+      if (!message || message.type !== "streamlit:render") return;
+      maxBytes = message.args.max_bytes || maxBytes;
+      currentLabel = message.args.label || "Paste image";
+      label.textContent = currentLabel;
+      send("streamlit:setFrameHeight", { height: document.body.scrollHeight });
+    });
+
+    target.addEventListener("paste", (event) => {
+      const items = Array.from(event.clipboardData?.items || []);
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      if (!imageItem) {
+        setStatus("Clipboard has no image. Copy an image, then try again.", true);
+        return;
+      }
+
+      const file = imageItem.getAsFile();
+      if (!file) {
+        setStatus("Could not read the image from the clipboard.", true);
+        return;
+      }
+      if (file.size > maxBytes) {
+        setStatus(
+          `Image exceeds the ${Math.floor(maxBytes / (1024 * 1024))} MB paste limit.`,
+          true
+        );
+        event.preventDefault();
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => setStatus("Could not read the pasted image.", true);
+      reader.onload = () => {
+        const content = String(reader.result || "");
+        const encoded = content.includes(",") ? content.split(",", 2)[1] : "";
+        if (!encoded) {
+          setStatus("Clipboard did not provide readable image data.", true);
+          return;
+        }
+        send("streamlit:setComponentValue", {
+          value: {
+            data: encoded,
+            mime: file.type || "application/octet-stream",
+            name: file.name || currentLabel,
+            size: file.size
+          }
+        });
+        setStatus(
+          `Pasted ${file.type || "image"} · ${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+          false,
+          true
+        );
+      };
+      reader.readAsDataURL(file);
+      event.preventDefault();
+    });
+
+    target.addEventListener("click", () => target.focus());
+    clearButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      send("streamlit:setComponentValue", { value: null });
+      setStatus("Image cleared.");
+    });
+
+    send("streamlit:componentReady", { apiVersion: 1 });
+    setHeight();
+  </script>
+</body>
+</html>
