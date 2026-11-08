@@ -237,7 +237,3 @@ python -B -m unittest discover -s tests -v
 ## 🔐 Image handling
 
 Pasted image bytes are processed in memory for the current analysis. The application does not save pasted images to `uploads/` or analysis outputs to `outputs/`. Those folders are included as placeholders for future extensions.
-
-## 📄 License
-
-No license is currently specified. Add a license file before redistributing this project or accepting external contributions.
