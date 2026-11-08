@@ -1,5 +1,7 @@
 # 🛰️ Satellite Image Classification Accelerator
 
+> 🚀 **Live app:** [Open Satellite Image Classification Accelerator](https://satellite-image-classifiy.streamlit.app/)
+
 > **A Streamlit + PyTorch project for exploring four-class land-cover mapping, image comparison, and sequential-versus-batched inference.**
 
 Paste a satellite image into the dashboard to generate a color-coded land-cover map. Optionally paste a second, aligned image to compare predicted land-cover changes. The project includes a CPU-compatible inference pipeline, optional CUDA acceleration, performance metrics, and a downloadable PDF report.
