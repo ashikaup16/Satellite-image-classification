@@ -1,3 +1,6 @@
 [server]
 maxUploadSize = 50
 maxMessageSize = 100
+
+[client]
+toolbarMode = "viewer"
